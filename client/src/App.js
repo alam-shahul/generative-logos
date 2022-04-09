@@ -59,7 +59,8 @@ function FreeText(props) {
 
 export const generativeOptions = [
     {value: "steer", label: "Steer the starting image towards the text prompt"},
-    {value: "refine", label: "Refine the starting image"}
+    {value: "refine", label: "Refine the starting image"},
+    {value: "fresh", label: "Start fresh, using just a text prompt"}
 ]
 
 function App(props) {
@@ -137,35 +138,40 @@ function App(props) {
     console.log(mode);
 	return (
         <>
-          <link
-            rel="stylesheet"
-            href="https://fonts.googleapis.com/css?family=Roboto:300,400,500,700&display=swap"
-          />
-
           <Container maxWidth="sm">
             <Box sx={{ my: 4 }}>
-              <Typography variant="h4" component="h1" gutterBottom>
+              <Typography variant="h5" component="h2" gutterBottom>
 		  	    <div className="title"><b>logo-gen</b></div>
 		  	  	<hr/>
               <small>
                 Welcome! Do you have a logo that's just not good enough? Do you want to beautify your existing logo without paying a professional artist? Then try out <b>logo-gen</b> today!
               </small>
+              </Typography>
               <br/>
-              <br/>
-              <div>How should we reimagine your logo?</div>
+              <hr/>
 		  	  <form onSubmit={handleSubmit(updatePreferences)}>
+                <div>How should we reimagine your logo?</div>
 		  	  	<Select name="mode" control={control} name={mode} onChange={newMode => setMode(newMode.value)} defaultValue="" label="How should we reimagine your logo?" options={generativeOptions} isMulti={false}/>
-                { (mode === "steer") ?
-                  <FreeText name="prompt" control={control} defaultValue="" label="Prompt" value={prompt}/>
+                { (mode && mode !== "refine") ?
+		  	  	  <>
+                    <hr/>
+                    <FreeText name="prompt" control={control} defaultValue="" label="Prompt" value={prompt}/>
+                  </>
                   :
                   <></>
                 }
-		  	  	<hr/>
-                  <FileProcessor type="image" updateFile={updateFile} initialURL={"https://www.csb.pitt.edu/wp-content/uploads/2013/09/cpcb-logo-e1386860509189.jpg"}/>
-		  		<br/>
+                { (mode && mode !== "fresh") ?
+		  	  	  <>
+                    <hr/>
+                    <div>Upload Logo</div>
+                    <FileProcessor type="image" updateFile={updateFile} initialURL={null}/>
+		  		    <br/>
+                  </>
+                  :
+                  <></>
+                }
 		  	  	<input className="submit-button" type="submit" value="Submit!"/>
 		  	  </form>
-              </Typography>
               <Copyright />
             </Box>
           </Container>
