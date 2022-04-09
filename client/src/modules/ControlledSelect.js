@@ -2,7 +2,7 @@ import React from 'react';
 import { Controller } from "react-hook-form";
 import Select from 'react-select';
 
-function ControlledSelect({control, name, options, isMulti, isClearable, defaultValue}){
+function ControlledSelect({control, name, options, onChange, isMulti, isClearable, defaultValue}){
   const customStyles =  {
     dropdownIndicator: (base) => ({
       ...base,

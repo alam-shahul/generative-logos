@@ -1,10 +1,17 @@
 import React, { useState, useEffect } from 'react';
 
-import { Container, Row, Form } from 'react-bootstrap';
+import { Row, Form } from 'react-bootstrap';
 import ControlledSelect from './modules/ControlledSelect';
 import FileProcessor from './modules/FileProcessor';
 import { useForm, Controller } from "react-hook-form";
 import axios from 'axios'
+
+import Container from '@mui/material/Container';
+import Typography from '@mui/material/Typography';
+import Box from '@mui/material/Box';
+import Link from '@mui/material/Link';
+
+import Select from 'react-select';
 
 import "./styles.css";
 
@@ -23,14 +30,14 @@ import "./styles.css";
 //   )
 // }
 
-function FancySelect(props) {
-	return (
-			<div className="fancy-select">
-			  <div>{props.label}</div>
-			  <ControlledSelect control={props.control} name={props.name} options={props.options} isMulti={props.isMulti} defaultValue={props.defaultValue} />
-			</div>
-	);
-}
+// function FancySelect(props) {
+// 	return (
+// 			<div className="fancy-select">
+// 			  <div>{props.label}</div>
+// 			  <ControlledSelect control={props.control} onChange={props.onChange} name={props.name} options={props.options} isMulti={props.isMulti} defaultValue={props.defaultValue} />
+// 			</div>
+// 	);
+// }
 
 function FreeText(props) {
 	return (
@@ -50,15 +57,18 @@ function FreeText(props) {
 	)
 }
 
-export const yesNoOptions = [
-    {value: "yes", label: "Yes"},
-    {value: "no", label: "No"}
+export const generativeOptions = [
+    {value: "steer", label: "Steer the starting image towards the text prompt"},
+    {value: "refine", label: "Refine the starting image"}
 ]
 
 function App(props) {
 	const { register, handleSubmit, control } = useForm();
     const [getMessage, setGetMessage] = useState({})
     const [image, setImage] = useState(null);
+    const [prompt, setPrompt] = useState("a pretty logo");
+    const [mode, setMode] = useState(null);
+    const [type, setType] = useState(null);
 
     useEffect(()=>{
       axios.get('/flask/hello', {
@@ -78,7 +88,22 @@ function App(props) {
 
 	const updatePreferences = (data) => {
 		console.log('form submitted!')
+        console.log(data.prompt)
+        setPrompt(data.prompt);
 		console.log(data)
+        const imagePost = {
+            type:"one",
+            prompt: data.prompt,
+            image: image
+        }
+        console.log(imagePost)
+        axios.post('/flask/hello', imagePost, {
+            withCredentials: true,
+            headers: {
+            'Content-Type': type,
+            'Access-Control-Allow-Origin': "http://localhost:3000"
+          }
+        })
 	}
 
     function updateFile(e, updateDisplayURL) {
@@ -91,50 +116,60 @@ function App(props) {
         reader.onload = (e) => {
           updateDisplayURL(e.target.result);
           setImage(e.target.result);
-          const imagePost = {
-              type:"one",
-              image: e.target.result
-          }
-          console.log(imagePost)
-          axios.post('/flask/hello', imagePost, {
-              withCredentials: true,
-              headers: {
-              'Content-Type': file.type,
-              'Access-Control-Allow-Origin': "http://localhost:3000"
-            }
-          })
         } 
         reader.readAsDataURL(file);
+        setType(file.type);
       }
     }
-	
+    function Copyright() {
+          return (
+                  <Typography variant="body2" color="text.secondary" align="center">
+                    {'Copyright © '}
+                    <Link color="inherit" href="https://mui.com/">
+                      Your Website
+                    </Link>{' '}
+                    {new Date().getFullYear()}
+                    {'.'}
+                  </Typography>
+                );
+    }
+    
+    console.log(mode);
 	return (
-		<Container>
-            <div>Welcome! Upload a picture of your starting logo.</div>
-            <div>{getMessage.status === 200 ? 
-                      <h3>{getMessage.data.message}</h3>
-                      :
-                      <h3>LOADING</h3>}
-            </div>
-            <br/>
-			<Row className="flex-column align-items-center">
-			  <Form onSubmit={handleSubmit(updatePreferences)}>
-			    <div className="title">Drawing Logos with Generative Art</div>
-			  	<hr/>
-			    <FreeText name="name" control={control} defaultValue="" label="Name" value={props.name}/>
-			  	<FreeText name="hobbies_freetext" control={control} defaultValue="" name="hobbiesFreeText" label="Metadata Tags" 
-			  		value={props.hobbiesFreeText}/>
-				<br/>
-			  	<div className="subtitle">Dropdown select example</div>
-			  	<FancySelect name="example" control={control} defaultValue="" label="Format options" options={yesNoOptions} isMulti={false}/>
-			  	<hr/>
-                <FileProcessor type="image" updateFile={updateFile} initialURL={"https://www.csb.pitt.edu/wp-content/uploads/2013/09/cpcb-logo-e1386860509189.jpg"}/>
+        <>
+          <link
+            rel="stylesheet"
+            href="https://fonts.googleapis.com/css?family=Roboto:300,400,500,700&display=swap"
+          />
 
-				<br/>
-			  	<input className="submit-button" type="submit" value="Submit!"/>
-			  </Form>
-			</Row>
-		</Container>
+          <Container maxWidth="sm">
+            <Box sx={{ my: 4 }}>
+              <Typography variant="h4" component="h1" gutterBottom>
+		  	    <div className="title"><b>logo-gen</b></div>
+		  	  	<hr/>
+              <small>
+                Welcome! Do you have a logo that's just not good enough? Do you want to beautify your existing logo without paying a professional artist? Then try out <b>logo-gen</b> today!
+              </small>
+              <br/>
+              <br/>
+              <div>How should we reimagine your logo?</div>
+		  	  <form onSubmit={handleSubmit(updatePreferences)}>
+		  	  	<Select name="mode" control={control} name={mode} onChange={newMode => setMode(newMode.value)} defaultValue="" label="How should we reimagine your logo?" options={generativeOptions} isMulti={false}/>
+                { (mode === "steer") ?
+                  <FreeText name="prompt" control={control} defaultValue="" label="Prompt" value={prompt}/>
+                  :
+                  <></>
+                }
+		  	  	<hr/>
+                  <FileProcessor type="image" updateFile={updateFile} initialURL={"https://www.csb.pitt.edu/wp-content/uploads/2013/09/cpcb-logo-e1386860509189.jpg"}/>
+		  		<br/>
+		  	  	<input className="submit-button" type="submit" value="Submit!"/>
+		  	  </form>
+              </Typography>
+              <Copyright />
+            </Box>
+          </Container>
+        </>
 	)
 }
 
